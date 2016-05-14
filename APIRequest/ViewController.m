@@ -8,7 +8,7 @@
 
 #import "ViewController.h"
 
-@interface ViewController ()
+@interface ViewController ()<NSURLSessionDelegate>
 
 @property NSString *location;
 
@@ -21,30 +21,91 @@
     [super viewDidLoad];
     
     self.location  = @"2172797&APPID=25b733dc88e97fd111c34250afbeac1c";
-    [self showLocaiton];
+
+    [self DataGetByURL];
     
+    [self GetDataByRequest];
 }
 
--(void)showLocaiton {
+-(void)DataGetByURL {
+    NSURLSession * session = [NSURLSession sharedSession];
     NSString *urlString = [NSString stringWithFormat:@"http://api.openweathermap.org/data/2.5/weather?id=%@", self.location];
+
+    NSURL * url = [NSURL URLWithString: urlString];
+    
+    
+    // Asynchronously Api is hit here
+    NSURLSessionDataTask * dataTask = [session dataTaskWithURL:url
+                                             completionHandler:^(NSData *data, NSURLResponse *response, NSError *error)
+                                               {
+                                                   
+                                                   NSLog(@"Data \n%@",data);
+                                                   
+                                                   NSDictionary * json  = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                                                   NSLog(@"Json \n %@",json);
+        //                                           success(json);
+                                                   
+                                                   
+                                                   
+                                               }];
+    
+    [dataTask resume] ; // Executed First
+    
+
+}
+-(void)GetDataByRequest {
+    
+    NSURLSession *session = [NSURLSession sharedSession];
+    NSString *urlString = [NSString stringWithFormat:@"http://api.openweathermap.org/data/2.5/weather?id=%@", self.location];
+    
     NSURL *url = [NSURL URLWithString:urlString];
+    
     NSURLRequest *urlRequest = [NSURLRequest requestWithURL:url];
     
-    NSData *data = [NSURLConnection sendSynchronousRequest:urlRequest
-                                         returningResponse:nil
-                                                     error:nil];
-    if (data != nil) {
-        NSDictionary *weatherDict = [NSJSONSerialization JSONObjectWithData:data
-                                                                    options:NSJSONReadingMutableContainers
-                                                                      error:nil];
-       NSLog(@"%@", [weatherDict description]);
-    }
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:urlRequest
+                                                completionHandler:^(NSData *data, NSURLResponse *response, NSError *error)
+                                                {
+                                                    NSLog(@"Data \n%@",data);
+                                                    
+                                                    NSDictionary * json  = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                                                    NSLog(@"Json \n %@",json);
+                                                }];
+    [dataTask resume];
+
 }
 
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+-(void)ForPostData {
+    NSError *error;
+    
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
+
+//    NSString *urlString = [NSString stringWithFormat:@"http://api.openweathermap.org/data/2.5/weather?id=%@", self.location];
+
+    NSURL *url = [NSURL URLWithString:@"[JSON SERVER"];
+//    NSURL *url = [NSURL URLWithString:urlString];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
+                                                           cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                                       timeoutInterval:60.0];
+    
+    [request addValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request addValue:@"application/json" forHTTPHeaderField:@"Accept"];
+    
+    [request setHTTPMethod:@"POST"];
+    NSDictionary *mapData = [[NSDictionary alloc] initWithObjectsAndKeys: @"TEST IOS", @"name",
+                             @"IOS TYPE", @"typemap",
+                             nil];
+    NSData *postData = [NSJSONSerialization dataWithJSONObject:mapData options:0 error:&error];
+    [request setHTTPBody:postData];
+    
+    
+    NSURLSessionDataTask *postDataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        
+    }];
+    
+    [postDataTask resume];
 }
+
 
 @end
